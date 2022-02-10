@@ -15,6 +15,8 @@ RUN \
   echo "**** install packages ****" && \
   apt-get update && \
   apt-get install -y \
+    apt-transport-https \
+    ca-certificates \
     binutils \
     jsvc \
     libcap2 \
@@ -22,17 +24,13 @@ RUN \
     mongodb-server \
     openjdk-8-jre-headless \
     wget && \
-  echo "**** install unifi ****" && \
-  if [ -z ${UNIFI_VERSION+x} ]; then \
-    UNIFI_VERSION=$(curl -sX GET http://dl-origin.ubnt.com/unifi/debian/dists/${UNIFI_BRANCH}/ubiquiti/binary-amd64/Packages \
-    |grep -A 7 -m 1 'Package: unifi' \
-    | awk -F ': ' '/Version/{print $2;exit}' \
-    | awk -F '-' '{print $1}'); \
-  fi && \
+  echo "**** Add Ubiquiti apt sources + install ****" && \
+  echo 'deb https://www.ui.com/downloads/unifi/debian stable ubiquiti' | tee /etc/apt/sources.list.d/100-ubnt-unifi.list && \
+  wget -O /etc/apt/trusted.gpg.d/unifi-repo.gpg https://dl.ui.com/unifi/unifi-repo.gpg && \
+  apt-mark hold openjdk-11-* && \
+  apt-get update && \
+  apt-get install unifi -y && \
   mkdir -p /app && \
-  curl -o \
-  /app/unifi.deb -L \
-    "https://dl.ui.com/unifi/${UNIFI_VERSION}/unifi_sysvinit_all.deb" && \
   echo "**** cleanup ****" && \
   apt-get clean && \
   rm -rf \
